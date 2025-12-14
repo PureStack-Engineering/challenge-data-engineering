@@ -1,5 +1,7 @@
 # 🛢️ PureStack Data Engineering Challenge: The ETL Pipeline
 
+PureStack.es - Engineering. Validated by Code. 
+
 ### Context
 Welcome to the **PureStack Technical Validation Protocol** for Data Engineering.
 In the real world, data is never clean. We audit your ability to handle **Missing Values**, **Inconsistent Formats**, and **Data Aggregation**.
