@@ -21,17 +21,17 @@ Your seniority is defined by the robustness and reproducibility of your pipeline
     1.  **Extract:** Read the `data/sales_raw.csv`.
     2.  **Transform:**
         * **Sanitization:** Standardize dates to `YYYY-MM-DD`. Handle nulls (drop rows with missing `order_id` or `amount`).
-        * **Type Casting:** Ensure `amount` is a float (strip symbols like `$`).
+        * **Type Casting:** Ensure `amount` is a float (strip symbols like `$`, handle `"USD"`).
         * **Aggregation:** Group by `country` and calculate `total_revenue`.
     3.  **Load:** Save the aggregated data into a SQLite database (`sales.db`) in a table named `revenue_by_country`.
-* **Deliverable:** A functional `src/pipeline.py` that generates correct numbers.
+* **Deliverable:** A functional `src/pipeline.py` that generates correct numbers (Turns the tests Green).
 
 #### 🥈 Level 2: Pro / Senior
 * **Focus:** Data Quality (DQ) & Observability.
 * **Requirement:** Everything in Level 3 + **Schema Validation & Logging**.
 * **Extra Tasks:**
-    1.  **Schema Validation:** Before loading, validate the transformed data using a library like **Pandera** or simple assertions. Ensure no negative values in revenue and that country codes are valid (e.g., length 2-3 chars).
-    2.  **Structured Logging:** Replace `print()` with Python's `logging` module. The pipeline should log info (rows processed) and errors (rows rejected) to a file or stdout with timestamps.
+    1.  **Schema Validation:** Before loading, validate the transformed data (e.g., ensure no negative revenue).
+    2.  **Structured Logging:** Replace `print()` with Python's `logging` module. Log processed row counts and errors.
     3.  **Error Isolation:** Instead of dropping bad rows silently, save them to a `data/rejected.csv` for audit purposes.
 * **Deliverable:** A pipeline that tells you *what* happened and *why* data was rejected.
 
@@ -39,9 +39,9 @@ Your seniority is defined by the robustness and reproducibility of your pipeline
 * **Focus:** Idempotency, Containerization & Scalability.
 * **Requirement:** Everything above + **Docker & Idempotency**.
 * **Extra Tasks:**
-    1.  **Idempotency:** Ensure the pipeline can run multiple times without duplicating data in the Database. Implement an "Upsert" logic or a clean-replace strategy for the specific batch.
-    2.  **Dockerization:** Create a `Dockerfile`. The entire pipeline should run with a single command (e.g., `docker run purestack-etl`) without requiring the user to manually install Python dependencies.
-    3.  **Architecture Decision:** Include a `ARCHITECTURE.md` explaining why you chose Pandas vs Polars vs SQL for the transformation, discussing memory trade-offs.
+    1.  **Idempotency:** Ensure the pipeline can run multiple times without duplicating data in the Database (Use `DROP TABLE IF EXISTS` or `INSERT OR REPLACE`).
+    2.  **Dockerization:** Create a `Dockerfile`. The pipeline should run with a single command (e.g., `docker run purestack-etl`).
+    3.  **Architecture Decision:** Include a `ARCHITECTURE.md` explaining why you chose Pandas vs Polars vs SQL.
 * **Deliverable:** A production-ready, reproducible artifact.
 
 ---
@@ -60,15 +60,21 @@ Your seniority is defined by the robustness and reproducibility of your pipeline
 2.  Install dependencies: `pip install -r requirements.txt`.
 3.  Analyze `data/sales_raw.csv` to identify the anomalies.
 4.  Implement your logic in `src/pipeline.py`.
-5.  Run validation tests: `pytest`.
-6.  Submit via **Pull Request** stating your target Level.
+    * **IMPORTANT:** Your main logic must be encapsulated in a function named `run_pipeline()` so the tests can call it.
+5.  Run validation tests:
+    ```bash
+    pytest tests/
+    ```
+6.  Submit via **Pull Request**.
+
+> **Note:** You will see a ❌ (**Red Cross**) initially because the database doesn't exist yet. Your goal is to write the code that turns it ✅ (**Green**).
 
 ### 🧪 Evaluation Criteria (PureStack Audit)
 
 | Criteria | Weight | Audit Focus |
 | :--- | :--- | :--- |
 | **Data Integrity** | 35% | Are the final numbers correct? Did you clean the `$` and dates properly? |
-| **Robustness** | 25% | Does the script crash on bad data? (Level 2/1 check). |
+| **Robustness** | 25% | Does the script crash on bad data? |
 | **Code Structure** | 25% | Modular functions (`extract`, `transform`, `load`) vs Monolithic script. |
 | **Best Practices** | 15% | Dependency management, Logging, and Idempotency logic. |
 
@@ -86,9 +92,9 @@ To ensure our **Automated Auditor** works, keep the core structure:
 │   └── sales_raw.csv            # Input Data (Dirty CSV with errors)
 ├── src/
 │   ├── __init__.py
-│   └── pipeline.py              # <--- YOUR CODE HERE (Function run_pipeline)
+│   └── pipeline.py              # <--- YOUR CODE HERE (Must contain 'run_pipeline')
 ├── tests/
 │   ├── __init__.py
-│   └── test_pipeline.py         # Validation Logic (Checks if sales.db exists and is correct)
-├── requirements.txt             # Dependencies (Pandas, Pytest)
+│   └── test_pipeline.py         # Validation Logic
+├── requirements.txt             # Dependencies
 └── README.md
