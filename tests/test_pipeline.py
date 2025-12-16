@@ -3,54 +3,67 @@ import sqlite3
 import pytest
 from src.pipeline import run_pipeline
 
-DB_PATH = "sales.db"
+# --- CRITICAL CONFIGURATION ---
+# The filename must match exactly what we ask the candidate to create.
+DB_PATH = "sales.db" 
+# ------------------------------
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown():
-    # 1. Borrar DB anterior si existe
+    # 1. Pre-cleanup: If an old DB exists, remove it to start fresh.
     if os.path.exists(DB_PATH):
         os.remove(DB_PATH)
     
-    # 2. Ejecutar el Pipeline del candidato
+    # 2. Run the Candidate's Pipeline (This is where the DB should be created)
     run_pipeline()
     
     yield
     
-    # 3. Limpieza (Opcional, dejar comentado para depurar)
+    # 3. Teardown: We do NOT remove the DB at the end so you can inspect it if it fails.
     # if os.path.exists(DB_PATH):
     #     os.remove(DB_PATH)
 
 def test_database_creation():
-    """Valida que el archivo sales.db se haya creado"""
-    assert os.path.exists(DB_PATH), "❌ El archivo sales.db no se ha generado."
+    """Mission 1: Validate that the script generates the .db file."""
+    assert os.path.exists(DB_PATH), f"❌ The file '{DB_PATH}' was not generated. Check your code."
 
 def test_data_integrity():
-    """Valida que la tabla exista y tenga columnas correctas"""
+    """Mission 2: Validate that the table exists and contains data."""
+    if not os.path.exists(DB_PATH):
+        pytest.fail("The database file does not exist.")
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     try:
+        # Check if the table 'revenue_by_country' exists
         cursor.execute("SELECT country, total_revenue FROM revenue_by_country")
         rows = cursor.fetchall()
-        assert len(rows) > 0, "❌ La tabla está vacía."
+        assert len(rows) > 0, "❌ The table 'revenue_by_country' was created, but it is empty."
     except sqlite3.OperationalError:
-        pytest.fail("❌ La tabla 'revenue_by_country' no existe.")
+        pytest.fail("❌ The table 'revenue_by_country' does NOT exist in the database.")
     finally:
         conn.close()
 
 def test_usa_revenue_calculation():
-    """Valida la lógica de limpieza para USA"""
-    # USA Logic:
-    # $100.50 (Valido)
-    # $200.00 (Valido)
-    # 50.00 (Valido - ID nulo se borra? Depende regla. Asumimos borrado row 5)
-    # $150.00 (Valido)
-    # Total esperado (aprox): 450.50
-    
+    """Mission 3: Validate the data cleaning logic for USA."""
+    if not os.path.exists(DB_PATH):
+        pytest.skip("DB does not exist")
+
     conn = sqlite3.connect(DB_PATH)
-    df = pd.read_sql("SELECT * FROM revenue_by_country WHERE country='USA'", conn)
-    conn.close()
-    
-    assert not df.empty, "No se encontraron datos para USA"
-    revenue = df.iloc[0]['total_revenue']
-    assert revenue == 450.50, f"❌ Revenue incorrecto para USA. Esperado: 450.50, Obtenido: {revenue}"
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT total_revenue FROM revenue_by_country WHERE country='USA'")
+        result = cursor.fetchone()
+        
+        assert result is not None, "❌ No data found for 'USA'"
+        revenue = result[0]
+        
+        # Expected value based on logic: 100.50 + 150.00 + 200.00 = 450.50
+        # (This depends on how strict your cleaning logic is regarding the null ID row)
+        assert revenue == 450.50, f"❌ Incorrect calculation for USA. Got: {revenue}, Expected: 450.50"
+        
+    except sqlite3.OperationalError:
+        pytest.fail("❌ SQL Error: The table probably does not exist.")
+    finally:
+        conn.close()
