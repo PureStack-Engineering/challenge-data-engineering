@@ -79,15 +79,16 @@ To ensure our **Automated Auditor** works, keep the core structure:
 
 ```text
 /
-├── .github/workflows/   # PureStack Audit System (DO NOT TOUCH)
+├── .github/
+│   └── workflows/
+│       └── audit.yml            # Automated Pipeline (Runs pytest)
 ├── data/
-│   └── sales_raw.csv    # <--- DIRTY DATA (Input)
+│   └── sales_raw.csv            # Input Data (Dirty CSV with errors)
 ├── src/
 │   ├── __init__.py
-│   └── pipeline.py      # <--- YOUR CODE HERE
+│   └── pipeline.py              # <--- YOUR CODE HERE (Function run_pipeline)
 ├── tests/
 │   ├── __init__.py
-│   └── test_pipeline.py # <--- VALIDATION TESTS
-├── requirements.txt
-├── Dockerfile           # <--- (Optional) Level 1
+│   └── test_pipeline.py         # Validation Logic (Checks if sales.db exists and is correct)
+├── requirements.txt             # Dependencies (Pandas, Pytest)
 └── README.md
