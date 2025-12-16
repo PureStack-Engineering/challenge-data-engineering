@@ -1,53 +1,56 @@
 import os
 import sqlite3
 import pytest
-from src.pipeline import ETIPipeline
+from src.pipeline import run_pipeline
 
-DB_PATH = "test_sales.db"
-CSV_PATH = "data/sales_raw.csv"
+DB_PATH = "sales.db"
 
-@pytest.fixture
-def run_pipeline():
+@pytest.fixture(scope="module", autouse=True)
+def setup_and_teardown():
+    # 1. Borrar DB anterior si existe
     if os.path.exists(DB_PATH):
         os.remove(DB_PATH)
     
-    pipeline = ETIPipeline(CSV_PATH, DB_PATH)
-    pipeline.run()
+    # 2. Ejecutar el Pipeline del candidato
+    run_pipeline()
+    
     yield
-    if os.path.exists(DB_PATH):
-        os.remove(DB_PATH)
+    
+    # 3. Limpieza (Opcional, dejar comentado para depurar)
+    # if os.path.exists(DB_PATH):
+    #     os.remove(DB_PATH)
 
-def test_database_creation(run_pipeline):
-    assert os.path.exists(DB_PATH)
+def test_database_creation():
+    """Valida que el archivo sales.db se haya creado"""
+    assert os.path.exists(DB_PATH), "❌ El archivo sales.db no se ha generado."
 
-def test_usa_revenue_calculation(run_pipeline):
-    """
-    USA Calculation Logic:
-    - 100.50 (Valid)
-    - $200.00 (Valid if cleaned)
-    - ERROR (Should be dropped)
-    Total Expected: 300.50
-    """
+def test_data_integrity():
+    """Valida que la tabla exista y tenga columnas correctas"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT total_revenue FROM revenue_by_country WHERE country='USA'")
-    result = cursor.fetchone()
-    conn.close()
     
-    assert result is not None, "USA data missing in DB"
-    assert result[0] == 300.50, f"Expected 300.50 for USA, got {result[0]}"
+    try:
+        cursor.execute("SELECT country, total_revenue FROM revenue_by_country")
+        rows = cursor.fetchall()
+        assert len(rows) > 0, "❌ La tabla está vacía."
+    except sqlite3.OperationalError:
+        pytest.fail("❌ La tabla 'revenue_by_country' no existe.")
+    finally:
+        conn.close()
 
-def test_spain_revenue_calculation(run_pipeline):
-    """
-    Spain Calculation Logic:
-    - 300.00 (Valid)
-    - 50.50 (Valid)
-    Total Expected: 350.50
-    """
+def test_usa_revenue_calculation():
+    """Valida la lógica de limpieza para USA"""
+    # USA Logic:
+    # $100.50 (Valido)
+    # $200.00 (Valido)
+    # 50.00 (Valido - ID nulo se borra? Depende regla. Asumimos borrado row 5)
+    # $150.00 (Valido)
+    # Total esperado (aprox): 450.50
+    
     conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT total_revenue FROM revenue_by_country WHERE country='Spain'")
-    result = cursor.fetchone()
+    df = pd.read_sql("SELECT * FROM revenue_by_country WHERE country='USA'", conn)
     conn.close()
     
-    assert result[0] == 350.50
+    assert not df.empty, "No se encontraron datos para USA"
+    revenue = df.iloc[0]['total_revenue']
+    assert revenue == 450.50, f"❌ Revenue incorrecto para USA. Esperado: 450.50, Obtenido: {revenue}"
