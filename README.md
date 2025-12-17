@@ -57,7 +57,10 @@ Your seniority is defined by the robustness and reproducibility of your pipeline
 ### 🚀 Execution Instructions
 
 1.  **Fork** this repository.
-2.  Install dependencies: `pip install -r requirements.txt`.
+2.  Install dependencies:
+    ```bash
+    pip install -r requirements.txt
+    ```
 3.  Analyze `data/sales_raw.csv` to identify the anomalies.
 4.  Implement your logic in `src/pipeline.py`.
     * **IMPORTANT:** Your main logic must be encapsulated in a function named `run_pipeline()` so the tests can call it.
@@ -67,7 +70,21 @@ Your seniority is defined by the robustness and reproducibility of your pipeline
     ```
 6.  Submit via **Pull Request**.
 
-> **Note:** You will see a ❌ (**Red Cross**) initially because the database doesn't exist yet. Your goal is to write the code that turns it ✅ (**Green**).
+> **Note:** You will see a ❌ (**Red Cross**) initially because the database doesn't exist yet. Your goal is to turn it ✅ (**Green**).
+
+---
+
+### 📝 Audit & Validation Rules (Strict)
+
+> **⚠️ The "Production-Ready" Policy**
+>
+> Our automated auditor (`audit.yml`) enforces strict quality rules. Your PR will be automatically rejected if:
+>
+> 1.  **Use of `print()`:** We are building a production pipeline. `print()` statements are **forbidden** in `src/`. You **must** use the Python `logging` module.
+> 2.  **Hardcoded Paths:** Do not use absolute paths (e.g., `C:/Users/...` or `/home/runner/...`). Use relative paths (e.g., `data/sales_raw.csv`) to ensure portability.
+> 3.  **Structure Integrity:** Do not rename `src/pipeline.py` or the `run_pipeline()` function, as the test suite depends on them.
+
+---
 
 ### 🧪 Evaluation Criteria (PureStack Audit)
 
@@ -76,7 +93,7 @@ Your seniority is defined by the robustness and reproducibility of your pipeline
 | **Data Integrity** | 35% | Are the final numbers correct? Did you clean the `$` and dates properly? |
 | **Robustness** | 25% | Does the script crash on bad data? |
 | **Code Structure** | 25% | Modular functions (`extract`, `transform`, `load`) vs Monolithic script. |
-| **Best Practices** | 15% | Dependency management, Logging, and Idempotency logic. |
+| **Best Practices** | 15% | Dependency management, Proper Logging (No prints), and Idempotency logic. |
 
 ---
 
@@ -87,7 +104,7 @@ To ensure our **Automated Auditor** works, keep the core structure:
 /
 ├── .github/
 │   └── workflows/
-│       └── audit.yml            # Automated Pipeline (Runs pytest)
+│       └── audit.yml            # PureStack Audit System
 ├── data/
 │   └── sales_raw.csv            # Input Data (Dirty CSV with errors)
 ├── src/
@@ -96,5 +113,6 @@ To ensure our **Automated Auditor** works, keep the core structure:
 ├── tests/
 │   ├── __init__.py
 │   └── test_pipeline.py         # Validation Logic
+├── .gitignore
 ├── requirements.txt             # Dependencies
 └── README.md
