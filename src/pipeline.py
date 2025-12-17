@@ -1,17 +1,23 @@
-import pandas as pd
+import logging
 import sqlite3
+import pandas as pd
+
+# Configure logging (Minimal setup)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def run_pipeline():
     """
-    TODO: Implement ETL logic here.
-    1. Read data/sales_raw.csv
-    2. Clean data (dates, symbols, nulls)
-    3. Aggregate revenue by country
-    4. Save to sales.db (table: revenue_by_country)
+    Orchestrates the ETL process.
+    Reads data, transforms it, and loads it into SQLite.
     """
-    print("Pipeline started...")
-    # Your logic goes here
-    pass
+    logger.info("Starting ETL Pipeline...")
+    
+    # TODO: Implement Extraction
+    # TODO: Implement Transformation (Cleaning, Aggregation)
+    # TODO: Implement Loading (SQLite)
+    
+    raise NotImplementedError("Pipeline logic not implemented yet!")
 
 if __name__ == "__main__":
     run_pipeline()
