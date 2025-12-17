@@ -1,21 +1,66 @@
 name: PureStack Data Engineering Audit
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  etl-pipeline-test:
+  audit-pipeline:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+    name: 🛢️ ETL Quality Gate
 
-      - name: Set up Python 3.10
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v3
+
+      - name: 🔍 Phase 1: Structural Integrity
+        run: |
+          echo "::group::File Structure Validation"
+          # 1. Check for Source Code
+          if [ ! -f "src/pipeline.py" ]; then echo "❌ Missing: src/pipeline.py"; exit 1; fi
+          if [ ! -f "src/__init__.py" ]; then echo "❌ Missing: src/__init__.py"; exit 1; fi
+          
+          # 2. Check for Data
+          if [ ! -f "data/sales_raw.csv" ]; then echo "❌ Missing: data/sales_raw.csv"; exit 1; fi
+          
+          # 3. Check for Requirements
+          if [ ! -f "requirements.txt" ]; then echo "❌ Missing: requirements.txt"; exit 1; fi
+          
+          echo "✅ Project Structure is valid."
+          echo "::endgroup::"
+
+      - name: 🐍 Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
+          cache: 'pip'
 
-      - name: Install Dependencies
+      - name: 📦 Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest pandas # Ensure minimal test deps exist
 
-      - name: Run Validation Tests
-        run: pytest
+      - name: 🕵️ Phase 2: Anti-Pattern Detection
+        run: |
+          echo "::group::Static Code Analysis"
+          
+          # Ban 'print(' in source code (Enforce Logging)
+          if grep -r "print(" src/; then 
+            echo "❌ CRITICAL: 'print()' statements detected in src/. Use the 'logging' module instead."
+            exit 1
+          fi
+          
+          # Ban Hardcoded Absolute Paths (e.g., C:/Users/...)
+          if grep -r "C:/" src/ || grep -r "/Users/" src/ || grep -r "/home/" src/; then
+            echo "❌ CRITICAL: Hardcoded absolute paths detected. Use relative paths."
+            exit 1
+          fi
+          
+          echo "✅ Code adheres to Engineering Standards."
+          echo "::endgroup::"
+
+      - name: 🧪 Phase 3: Data Integrity Validation
+        run: pytest tests/ -v
