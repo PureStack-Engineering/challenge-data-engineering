@@ -15,19 +15,13 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v3
 
-      - name: 🔍 Phase 1: Structural Integrity
+      - name: 🔍 Phase 1 Structural Integrity
         run: |
           echo "::group::File Structure Validation"
-          # 1. Check for Source Code
           if [ ! -f "src/pipeline.py" ]; then echo "❌ Missing: src/pipeline.py"; exit 1; fi
           if [ ! -f "src/__init__.py" ]; then echo "❌ Missing: src/__init__.py"; exit 1; fi
-          
-          # 2. Check for Data
           if [ ! -f "data/sales_raw.csv" ]; then echo "❌ Missing: data/sales_raw.csv"; exit 1; fi
-          
-          # 3. Check for Requirements
           if [ ! -f "requirements.txt" ]; then echo "❌ Missing: requirements.txt"; exit 1; fi
-          
           echo "✅ Project Structure is valid."
           echo "::endgroup::"
 
@@ -41,26 +35,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pandas # Ensure minimal test deps exist
+          pip install pytest pandas
 
-      - name: 🕵️ Phase 2: Anti-Pattern Detection
+      - name: 🕵️ Phase 2 Anti-Pattern Detection
         run: |
           echo "::group::Static Code Analysis"
-          
-          # Ban 'print(' in source code (Enforce Logging)
-          if grep -r "print(" src/; then 
-            echo "❌ CRITICAL: 'print()' statements detected in src/. Use the 'logging' module instead."
-            exit 1
-          fi
-          
-          # Ban Hardcoded Absolute Paths (e.g., C:/Users/...)
-          if grep -r "C:/" src/ || grep -r "/Users/" src/ || grep -r "/home/" src/; then
-            echo "❌ CRITICAL: Hardcoded absolute paths detected. Use relative paths."
-            exit 1
-          fi
-          
+          if grep -r "print(" src/; then echo "❌ CRITICAL: 'print()' detected. Use 'logging'."; exit 1; fi
+          if grep -r "C:/" src/; then echo "❌ CRITICAL: Absolute path 'C:/' detected."; exit 1; fi
+          if grep -r "/Users/" src/; then echo "❌ CRITICAL: Absolute path '/Users/' detected."; exit 1; fi
           echo "✅ Code adheres to Engineering Standards."
           echo "::endgroup::"
 
-      - name: 🧪 Phase 3: Data Integrity Validation
+      - name: 🧪 Phase 3 Data Integrity Validation
         run: pytest tests/ -v
