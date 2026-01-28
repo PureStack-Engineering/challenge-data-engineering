@@ -13,8 +13,6 @@ def clean_db():
         os.remove(DB_PATH)
     yield
     # Optional: cleanup after test
-    # if os.path.exists(DB_PATH):
-    #     os.remove(DB_PATH)
 
 def test_pipeline_execution():
     """Test if the pipeline runs and creates the database"""
@@ -38,15 +36,12 @@ def test_data_integrity():
     assert "total_revenue" in df.columns, "❌ Column 'total_revenue' missing."
     
     # 2. Check Data Cleaning Logic
-    # USA: 100.50 + 200.00 + 100.00 + 100.50 = 501.0
+  
     usa_revenue = df.loc[df["country"] == "USA", "total_revenue"].values[0]
     assert usa_revenue == 501.0, f"❌ Incorrect Revenue for USA. Expected 501.0, got {usa_revenue}"
     
-    # France: 150
+   
     france_revenue = df.loc[df["country"] == "France", "total_revenue"].values[0]
     assert france_revenue == 150.0, "❌ Incorrect Revenue for France."
 
-    # Verify NULLs and Bad Data were dropped
-    # Germany had a missing ID, should be dropped (or kept depending on your rule, assume dropped)
-    # Italy had negative revenue? If Level 2 validation logic exists, maybe dropped.
-    # For Level 3 (Basic), usually we just sum numbers.
+  
